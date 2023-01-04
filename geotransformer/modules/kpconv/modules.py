@@ -8,8 +8,8 @@ Original file is located at
 """
 
 import torch
-from functional import nearest_upsample,maxpool
-from kpconv import KPConv
+from geotransformer.modules.kpconv.functional import nearest_upsample,maxpool
+from geotransformer.modules.kpconv.kpconv import KPConv
 
 class MaxPool(torch.nn.Module):
   @staticmethod
@@ -132,16 +132,3 @@ class ResidualBlock(torch.nn.Module):
     out = self.leaky_relu(x + shortcut)
 
     return out
-
-import torch
-!pip install -r requirements.txt
-
-
-s_feats = torch.randn((100,8))
-q_points = torch.randn((50,3))
-s_points = torch.randn((100,3))
-neighbor_indices = torch.randint(high = 99, size = (50,10))
-
-model = ConvBlock(8, 20, 6, 0.2, 0.1, 4)
-
-model(s_feats, q_points, s_points, neighbor_indices).size()
