@@ -9,7 +9,7 @@ Original file is located at
 
 import torch
 
-from index_select import index_select
+from geotransformer.modules.ops import index_select
 
 def nearest_upsample(x, upsample_indices):
 
