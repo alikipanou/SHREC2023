@@ -14,9 +14,8 @@ import math
 
 import sys
 import os
-!pip install open3d
-from kernel_points import load_kernels
-from index_select import index_select
+from geotransformer.modules.kpconv.kernel_points import load_kernels
+from geotransformer.modules.ops import index_select
 
 class KPConv(torch.nn.Module):
   def __init__(self, in_channels, out_channels, kernel_size, radius, sigma, bias = False, dimension = 3, inf = 1e6, epsilon = 1e-9):
@@ -134,5 +133,4 @@ class KPConv(torch.nn.Module):
         format_string += ')'
         return format_string
 
-"""# Νέα ενότητα"""
 
