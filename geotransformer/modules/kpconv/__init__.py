@@ -18,4 +18,4 @@ from geotransformer.modules.kpconv.modules import (
     GlobalAvgPool,
     MaxPool,
 )
-from geotransformer.modules.kpconv.functional import nearest_upsample, global_avgpool,
+from geotransformer.modules.kpconv.functional import (nearest_upsample, global_avgpool)
