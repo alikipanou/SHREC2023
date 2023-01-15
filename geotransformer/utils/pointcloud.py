@@ -1,4 +1,3 @@
-
 from typing import Tuple, List, Optional, Union, Any
 
 import numpy as np
@@ -262,4 +261,4 @@ def convert_depth_mat_to_points(
     y = (v - center_y) * z / focal_y
     points = np.stack([x, y, z], axis=1)
     points = points[depth > 0]
-    return 
+    return points
