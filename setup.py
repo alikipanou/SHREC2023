@@ -9,7 +9,7 @@ setup(
         CUDAExtension(
             name='geotransformer.ext',
             sources=[
-                'geotransformer/extensions/extra/cloud/cloud.cpp',
+                'geotransformer/extra/cloud/cloud.cpp',
                 'geotransformer/extensions/cpu/grid_subsampling/grid_subsampling.cpp',
                 'geotransformer/extensions/cpu/grid_subsampling/grid_subsampling_cpu.cpp',
                 'geotransformer/extensions/cpu/radius_neighbors/radius_neighbors.cpp',
