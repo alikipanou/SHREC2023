@@ -20,10 +20,10 @@ class SingleTester(BaseTester):
   def before_test_step(self, iteration, data_dict):
       pass
 
-  def test_step(self, iteration, data_dict) -> Dict:
+  def test_step(self, data_dict) -> Dict:
       pass
 
-  def eval_step(self, iteration, data_dict, output_dict) -> Dict:
+  def eval_step(self, data_dict, output_dict) -> Dict:
       pass
 
   def after_test_step(self, iteration, data_dict, output_dict, result_dict):
