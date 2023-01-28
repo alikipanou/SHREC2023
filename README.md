@@ -1,1 +1,1 @@
-# GeoTransformer
+# SHREC2023
