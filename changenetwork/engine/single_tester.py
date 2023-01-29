@@ -4,11 +4,11 @@ import torch
 import ipdb
 from tqdm import tqdm
 
-from geotransformer.engine.base_tester import BaseTester
-from geotransformer.utils.summary_board import SummaryBoard
-from geotransformer.utils.timer import Timer
-from geotransformer.utils.common import get_log_string
-from geotransformer.utils.torch import release_cuda, to_cuda
+from changenetwork.engine.base_tester import BaseTester
+from changenetwork.utils.summary_board import SummaryBoard
+from changenetwork.utils.timer import Timer
+from changenetwork.utils.common import get_log_string
+from changenetwork.utils.torch import release_cuda, to_cuda
 
 class SingleTester(BaseTester):
   def __init__(self, cfg, parser = None, cudnn_deterministic=True):
