@@ -1,7 +1,7 @@
 from typing import Optional, List
 
-from geotransformer.utils.average_meter import AverageMeter
-from geotransformer.utils.common import get_print_format
+from changenetwork.utils.average_meter import AverageMeter
+from changenetwork.utils.common import get_print_format
 
 
 class SummaryBoard:
