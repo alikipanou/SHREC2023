@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from geotransformer.modules.kpconv import (ConvBlock, ResidualBlock, UnaryBlock, LastUnaryBlock, nearest_upsample)
+from changenetwork.modules.kpconv import (ConvBlock, ResidualBlock, UnaryBlock, LastUnaryBlock, nearest_upsample)
 
 class KPConvFPN(nn.Module):
   def __init__(self, input_dim, output_dim, init_dim, kernel_size, init_radius, init_sigma, group_norm):
@@ -21,16 +21,9 @@ class KPConvFPN(nn.Module):
     self.encoder4_2 = ResidualBlock(init_dim * 8, init_dim * 16, kernel_size, init_radius * 8, init_sigma * 8, group_norm)
     self.encoder4_3 = ResidualBlock(init_dim * 16, init_dim * 16, kernel_size, init_radius * 8, init_sigma * 8, group_norm)
 
-    self.encoder5_1 = ResidualBlock(init_dim * 16, init_dim * 16, kernel_size, init_radius * 8, init_sigma * 8, group_norm, strided = True)
-    self.encoder5_2 = ResidualBlock(init_dim * 16, init_dim * 32, kernel_size, init_radius * 16, init_sigma * 16, group_norm)
-    self.encoder5_3 = ResidualBlock(init_dim * 32, init_dim * 32, kernel_size, init_radius * 16, init_sigma * 16, group_norm)
-
-    self.decoder4 = UnaryBlock(init_dim * 48, init_dim * 16, group_norm)
-    self.decoder3 = UnaryBlock(init_dim * 24, init_dim * 8, group_norm)
-    self.decoder2 = torch.nn.Linear(init_dim * 12, output_dim)
+    
   
   def forward(self, feats, data_dict):
-    feats_list = []
 
     points_list = data_dict['points']
     neighbors_list = data_dict['neighbors']
@@ -53,28 +46,6 @@ class KPConvFPN(nn.Module):
     feats_s4 = self.encoder4_2(feats_s4, points_list[3], points_list[3], neighbors_list[3])
     feats_s4 = self.encoder4_3(feats_s4, points_list[3], points_list[3], neighbors_list[3])
 
-    feats_s5 = self.encoder5_1(feats_s4, points_list[4], points_list[3], subsampling_list[3])
-    feats_s5 = self.encoder5_2(feats_s5, points_list[4], points_list[4], neighbors_list[4])
-    feats_s5 = self.encoder5_3(feats_s5, points_list[4], points_list[4], neighbors_list[4])
+    return feats_s4
 
-    latent_s5 = feats_s5 
-    feats_list.append(latent_s5)
-
-    latent_s4 = nearest_upsample(latent_s5, upsampling_list[3])
-    latent_s4 = torch.cat([latent_s4, feats_s4], dim = 1)
-    latent_s4 = self.decoder4(latent_s4)
-    feats_list.append(latent_s4)
-
-    latent_s3 = nearest_upsample(latent_s4, upsampling_list[2])
-    latent_s3 = torch.cat([latent_s3, feats_s3], dim = 1)
-    latent_s3 = self.decoder3(latent_s3)
-    feats_list.append(latent_s3)
-
-    latent_s2 = nearest_upsample(latent_s3, upsampling_list[1])
-    latent_s2 = torch.cat([latent_s2, feats_s2], dim = 1)
-    latent_s2 = self.decoder2(latent_s2)
-    feats_list.append(latent_s2)
-
-    feats_list.reverse()
-
-    return feats_list
+   
