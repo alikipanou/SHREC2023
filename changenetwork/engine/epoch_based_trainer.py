@@ -6,11 +6,11 @@ import ipdb
 import torch
 import tqdm
 
-from geotransformer.engine.base_trainer import BaseTrainer
-from geotransformer.utils.torch import to_cuda
-from geotransformer.utils.summary_board import SummaryBoard
-from geotransformer.utils.timer import Timer
-from geotransformer.utils.common import get_log_string
+from changenetwork.engine.base_trainer import BaseTrainer
+from changenetwork.utils.torch import to_cuda
+from changenetwork.utils.summary_board import SummaryBoard
+from changenetwork.utils.timer import Timer
+from changenetwork.utils.common import get_log_string
 
 
 class EpochBasedTrainer(BaseTrainer):
