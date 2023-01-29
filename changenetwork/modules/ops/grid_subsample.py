@@ -1,7 +1,7 @@
 import importlib
 
 
-ext_module = importlib.import_module('geotransformer.ext')
+ext_module = importlib.import_module('changenetwork.ext')
 
 
 def grid_subsample(points, lengths, voxel_size):
