@@ -8,8 +8,8 @@ import abc
 import torch
 import ipdb
 
-from geotransformer.utils.torch import initialize
-from geotransformer.engine.logger import Logger
+from changenetwork.utils.torch import initialize
+from changenetwork.engine.logger import Logger
 
 
 def inject_default_parser(parser=None):
