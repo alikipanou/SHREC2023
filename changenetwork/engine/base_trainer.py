@@ -12,10 +12,10 @@ import torch.distributed as dist
 from torch.utils.tensorboard import SummaryWriter
 import ipdb
 
-from geotransformer.utils.summary_board import SummaryBoard
-from geotransformer.utils.timer import Timer
-from geotransformer.utils.torch import all_reduce_tensors, release_cuda, initialize
-from geotransformer.engine.logger import Logger
+from changenetwork.utils.summary_board import SummaryBoard
+from changenetwork.utils.timer import Timer
+from changenetwork.utils.torch import all_reduce_tensors, release_cuda, initialize
+from changenetwork.engine.logger import Logger
 
 
 def inject_default_parser(parser=None):
