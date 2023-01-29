@@ -2,13 +2,13 @@ import argparse
 import time
 
 import torch.optim as optim
+import torch
 
-from geotransformer.engine import EpochBasedTrainer
+from changenetwork.engine import EpochBasedTrainer
 
 from config import make_cfg
 from dataset import train_valid_data_loader
 from model import create_model
-from loss import OverallLoss, Evaluator
 
 class Trainer(EpochBasedTrainer):
   def __init__(self, cfg):
@@ -36,12 +36,13 @@ class Trainer(EpochBasedTrainer):
     self.register_scheduler(scheduler)
 
     # loss function, evaluator
-    self.loss_func = OverallLoss(cfg).cuda()
+    self.loss_func = torch.nn.CrossEntropyLoss().cuda()
     self.evaluator = Evaluator(cfg).cuda()
 
   def train_step(self,data_dict):
     output_dict = self.model(data_dict)
-    loss_dict = self.loss_func(output_dict, data_dict)
+    loss = self.loss_func(output_dict['output'], data_dict['label'])
+    loss_dict  = {'loss' : loss}
     result_dict = self.evaluator(output_dict, data_dict)
     loss_dict.update(result_dict)
 
@@ -49,7 +50,8 @@ class Trainer(EpochBasedTrainer):
   
   def val_step(self, data_dict):
     output_dict = self.model(data_dict)
-    loss_dict = self.loss_func(output_dict, data_dict)
+    loss = self.loss_func(output_dict['output'], data_dict['label'])
+    loss_dict  = {'loss' : loss}
     result_dict = self.evaluator(output_dict, data_dict)
     loss_dict.update(result_dict)
     
