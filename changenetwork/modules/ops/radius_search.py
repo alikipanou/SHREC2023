@@ -1,7 +1,7 @@
 import importlib
 
 
-ext_module = importlib.import_module('geotransformer.ext')
+ext_module = importlib.import_module('changenetwork.ext')
 
 
 def radius_search(q_points, s_points, q_lengths, s_lengths, radius, neighbor_limit):
