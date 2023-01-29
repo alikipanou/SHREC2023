@@ -3,18 +3,18 @@ from torch.utils.cpp_extension import BuildExtension, CUDAExtension
 
 
 setup(
-    name='geotransformer',
+    name='changenetwork',
     version='1.0.0',
     ext_modules=[
         CUDAExtension(
-            name='geotransformer.ext',
+            name='changenetwork.ext',
             sources=[
-                'geotransformer/extra/cloud/cloud.cpp',
-                'geotransformer/extensions/cpu/grid_subsampling/grid_subsampling.cpp',
-                'geotransformer/extensions/cpu/grid_subsampling/grid_subsampling_cpu.cpp',
-                'geotransformer/extensions/cpu/radius_neighbors/radius_neighbors.cpp',
-                'geotransformer/extensions/cpu/radius_neighbors/radius_neighbors_cpu.cpp',
-                'geotransformer/extensions/pybind.cpp',
+                'changenetwork/extra/cloud/cloud.cpp',
+                'changenetwork/extensions/cpu/grid_subsampling/grid_subsampling.cpp',
+                'changenetwork/extensions/cpu/grid_subsampling/grid_subsampling_cpu.cpp',
+                'changenetwork/extensions/cpu/radius_neighbors/radius_neighbors.cpp',
+                'changenetwork/extensions/cpu/radius_neighbors/radius_neighbors_cpu.cpp',
+                'changenetwork/extensions/pybind.cpp',
             ],
         ),
     ],
