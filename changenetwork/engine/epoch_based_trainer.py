@@ -1,6 +1,7 @@
 import os
 import os.path as osp
 from typing import Tuple, Dict
+import numpy as np
 
 import ipdb
 import torch
@@ -149,7 +150,7 @@ class EpochBasedTrainer(BaseTrainer):
         result_dict = self.release_tensors(result_dict)
         summary_board.update_from_result_dict(result_dict)
         message = get_log_string(
-                result_dict=summary_board.summary(),
+                result_dict=summary_board.summary(['correct']),
                 epoch=self.epoch,
                 iteration=self.inner_iteration,
                 max_iteration=total_iterations,
@@ -157,8 +158,29 @@ class EpochBasedTrainer(BaseTrainer):
             )
         pbar.set_description(message)
         torch.cuda.empty_cache()
+      
+      dict_accuracies = summary_board.summary(['correct', 'correct_added', 'correct_removed', 'correct_nochange', 'correct_change', 'correct_color_change'])
+      dict_gts = summary_board.summary_len(['correct_added', 'correct_removed', 'correct_nochange', 'correct_change', 'correct_color_change'])
+      dict_tps = summary_board.summary_sum(['correct_added', 'correct_removed', 'correct_nochange', 'correct_change', 'correct_color_change'])
+      
+      dict_preds = summary_board.summary_sum(['added', 'removed', 'nochange', 'change', 'color_change'])
+      
       self.after_val_epoch(self.epoch)
-      summary_dict = summary_board.summary()
+      summary_dict = {}
+      summary_dict['overall_accuracy'] = dict_accuracies['correct']
+      summary_dict['added_accuracy'] = dict_accuracies['correct_added']
+      summary_dict['removed_accuracy'] = dict_accuracies['correct_removed']
+      summary_dict['nochange_accuracy'] = dict_accuracies['correct_nochange']
+      summary_dict['change_accuracy'] = dict_accuracies['correct_change']
+      summary_dict['color_change_accuracy'] = dict_accuracies['correct_color_change']
+      
+      summary_dict['added_iou'] = dict_tps['correct_added'] / (dict_gts['correct_added'] + dict_preds['added'] - dict_tps['correct_added'])
+      summary_dict['removed_iou'] = dict_tps['correct_removed'] / (dict_gts['correct_removed'] + dict_preds['removed'] - dict_tps['correct_removed'])
+      summary_dict['nochange_iou'] = dict_tps['correct_nochange'] / (dict_gts['correct_nochange'] + dict_preds['nochange'] - dict_tps['correct_nochange'])
+      summary_dict['change_iou'] = dict_tps['correct_change'] / (dict_gts['correct_change'] + dict_preds['change'] - dict_tps['correct_change'])
+      summary_dict['color_change_iou'] = dict_tps['correct_color_change'] / (dict_gts['correct_color_change'] + dict_preds['color_change'] - dict_tps['correct_color_change'])
+      summary_dict['mean_iou'] = np.mean(summary_dict['added_iou'], summary_dict['removed_iou'], summary_dict['nochange_iou'], summary_dict['change_iou'], summary_dict['color_change_iou'])
+      
       message = '[Val] ' + get_log_string(summary_dict, epoch=self.epoch, timer=timer)
       self.logger.critical(message)
       self.write_event('val', summary_dict, self.epoch)
