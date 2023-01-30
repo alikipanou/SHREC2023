@@ -90,3 +90,18 @@ class SummaryBoard:
             names = self.meter_names
         summary_dict = {name: self.meter_dict[name].mean() for name in names}
         return summary_dict
+    
+    def summary_sum(self, names = None):
+        if names is None:
+            names = self.meter_names
+        summary_dict = {name: self.meter_dict[name].sum() for name in names}
+        return summary_dict
+    
+    def summary_len(self, names = None):
+        if names is None:
+            names = self.meter_names
+            
+        summary_dict = {name: len(self.meter_dict[name].records) for name in names}
+        return summary_dict
+    
+        
