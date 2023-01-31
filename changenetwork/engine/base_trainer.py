@@ -34,7 +34,7 @@ class BaseTrainer(abc.ABC):
         self,
         cfg,
         parser=None,
-        cudnn_deterministic=True,
+        cudnn_deterministic=False,
         autograd_anomaly_detection=False,
         save_all_snapshots=True,
         run_grad_check=False,
