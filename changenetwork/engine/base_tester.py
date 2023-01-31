@@ -22,7 +22,7 @@ def inject_default_parser(parser=None):
 
 
 class BaseTester(abc.ABC):
-    def __init__(self, cfg, parser=None, cudnn_deterministic=True):
+    def __init__(self, cfg, parser=None, cudnn_deterministic=False):
         # parser
         parser = inject_default_parser(parser)
         self.args = parser.parse_args()
