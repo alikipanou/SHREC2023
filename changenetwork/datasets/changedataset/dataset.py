@@ -5,6 +5,13 @@ import numpy as np
 import torch.utils.data
 import laspy
 
+import os.path as osp
+import random
+import glob
+import numpy as np
+import torch.utils.data
+import laspy
+
 import pandas as pd
 import re
 import open3d as o3d
@@ -28,7 +35,7 @@ class ChangeDataset(torch.utils.data.Dataset):
         #subset = 'train',
         point_limit=2048,
         shape = 'cylinder',
-        clearance = 1
+        clearance = 1.5
     ):
         super(ChangeDataset, self).__init__()
 
@@ -38,10 +45,7 @@ class ChangeDataset(torch.utils.data.Dataset):
 
         #one hot encode labels (some labels are misspelled) 
         self.class_dict = {'added' : np.array([1,0,0,0,0]), 'removed': np.array([0,1,0,0,0]), 'nochange' : np.array([0,0,1,0,0]),
-                        'change' : np.array([0,0,0,1,0]), 'color_change': np.array([0,0,0,0,1]), 'adeed': np.array([1,0,0,0,0]),
-                           'changee': np.array([0,0,0,1,0]), 'nohcange': np.array([0,0,1,0,0]), 'remoced' : np.array([0,1,0,0,0]),
-                           'reomved': np.array([0,1,0,0,0])}
-
+                        'change' : np.array([0,0,0,1,0]), 'color_change': np.array([0,0,0,0,1]) }
         # 'train' or 'val'
         #self.subset = subset
 
@@ -60,6 +64,9 @@ class ChangeDataset(torch.utils.data.Dataset):
 
         self.lengths = []
         self.total_points_of_interest = 0
+
+        self.labels_count = {'added' : 0, 'removed' : 0, 'nochange' : 0, 'change' : 0, 'color_change' : 0}
+                           
         previous = 0
         # list with starting and ending index of points of interest that belong in a single csv file
         for i, path in enumerate(self.classification_files):
@@ -67,6 +74,19 @@ class ChangeDataset(torch.utils.data.Dataset):
             self.lengths.append(len(df) + previous)
             previous = self.lengths[i]
             self.total_points_of_interest += len(df)
+
+            for j in range(len(df)):
+                df_row = df.iloc[j]
+                self.labels_count[df_row['classification']] += 1
+
+        # dataset is highly unbalanced
+        # create weights for each class 
+        num_classes = 5 
+        self.weights = [self.total_points_of_interest / (num_classes * label_count) for label_count in self.labels_count.values()]
+
+        self.weights = np.asarray(self.weights).astype(np.float32)
+        #print(self.weights)
+        
 
     def _load_point_cloud_from_las_file(self, path):
         input_las = laspy.read(path)
@@ -182,7 +202,7 @@ class ChangeDataset(torch.utils.data.Dataset):
         object_a_rgb = object_a[:,3:]
         object_b_rgb = object_b[:,3:]
 
-        data_dict['scene_id'] = re.split(r'(\d+)', self.files_time_a[file_index])[3]
+        data_dict['scene_id'] = int(re.split(r'(\d+)', self.files_time_a[file_index])[3])
         data_dict['center'] = np.array([df_row['x'],df_row['y'], df_row['z']]).astype(np.float32)
         data_dict['ref_points'] = object_a_points.astype(np.float32)
         data_dict['src_points'] = object_b_points.astype(np.float32)
