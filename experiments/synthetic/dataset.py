@@ -22,7 +22,7 @@ def train_valid_data_loader(cfg, distributed):
                                              cfg.backbone.init_voxel_size, cfg.backbone.init_radius, neighbor_limits
                                              batch_size=cfg.test.batch_size, num_workers=cfg.test.num_workers, shuffle=False, distributed=distributed)
   
-  return train_loader, valid_loader, neighbor_limits
+  return train_loader, valid_loader, neighbor_limits, train_dataset.weights
 
 
 def test_data_loader(cfg):
