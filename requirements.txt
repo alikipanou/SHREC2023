@@ -1,0 +1,16 @@
+torch
+numpy
+scipy
+tqdm
+coloredlogs
+easydict
+nibabel
+open3d==0.11.2
+scikit-learn
+einops
+ipdb
+tensorboard
+tensorboardX
+laspy==2.3.0
+pandas==1.3.2
+"laspy[lazrs,laszip]"
