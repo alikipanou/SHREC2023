@@ -3,8 +3,9 @@ import time
 
 import torch.optim as optim
 import torch as nn
+import torch
 
-from changenetwork.engine import EpochBasedTrainer
+from changenetwork.engine.epoch_based_trainer import EpochBasedTrainer
 
 from config import make_cfg
 from dataset import train_valid_data_loader
@@ -58,7 +59,7 @@ class Trainer(EpochBasedTrainer):
     self.register_scheduler(scheduler)
 
     # loss function, evaluator
-    self.loss_func = torch.nn.CrossEntropyLoss(weights = torch.from_numpy(class_weights)).cuda()
+    self.loss_func = nn.CrossEntropyLoss(weights = torch.from_numpy(class_weights)).cuda()
     self.evaluator = Evaluator().cuda()
     
 

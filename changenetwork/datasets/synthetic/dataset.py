@@ -225,7 +225,7 @@ class SyntheticDataset(torch.utils.data.Dataset):
         return self.total_points_of_interest
 
 
-#dataset = SyntheticDataset(shape = 'square')
+dataset = SyntheticDataset(shape = 'square')
 #print(len(dataset))
-#dataset._visualize_object_pair(329)
+dataset._visualize_object_pair(329)
 
