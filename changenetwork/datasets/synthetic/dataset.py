@@ -58,12 +58,41 @@ class SyntheticDataset(torch.utils.data.Dataset):
         self.lengths = []
         self.total_points_of_interest = 0
         previous = 0
+
+        self.labels_count = {'added' : 0, 'removed': 0, 'nochange' : 0,
+                        'change' : 0, 'color_change': 0, 'adeed': 0,
+                           'changee': 0, 'nohcange': 0, 'remoced' : 0,
+                           'reomved': 0}
         # list with starting and ending index of points of interest that belong in a single csv file
         for i, path in enumerate(self.classification_files):
             df = pd.read_csv(path)
             self.lengths.append(len(df) + previous)
             previous = self.lengths[i]
             self.total_points_of_interest += len(df)
+
+            for j in range(len(df)):
+                df_row = df.iloc[j]
+                self.labels_count[df_row['classification']] += 1
+
+        # dataset is highly unbalanced
+        # create weights for each class
+        self.labels_count['added'] += self.labels_count['adeed']
+        self.labels_count['removed'] += (self.labels_count['remoced'] + self.labels_count['reomved'])
+        self.labels_count['change'] += self.labels_count['changee']
+        self.labels_count['nochange'] += self.labels_count['nohcange']
+
+        del self.labels_count['adeed']
+        del self.labels_count['remoced']
+        del self.labels_count['reomved']
+        del self.labels_count['changee']
+        del self.labels_count['nohcange']
+        
+        num_classes = 5 
+        self.weights = [self.total_points_of_interest / (num_classes * label_count) for label_count in self.labels_count.values()]
+
+       
+        self.weights = np.asarray(self.weights).astype(np.float32)
+        #print(self.weights)
  
 
     def _load_point_cloud_from_las_file(self, path):
