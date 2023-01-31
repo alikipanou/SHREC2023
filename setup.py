@@ -9,7 +9,7 @@ setup(
         CUDAExtension(
             name='changenetwork.ext',
             sources=[
-                'changenetwork/extra/cloud/cloud.cpp',
+                'changenetwork/extensions/extra/cloud/cloud.cpp',
                 'changenetwork/extensions/cpu/grid_subsampling/grid_subsampling.cpp',
                 'changenetwork/extensions/cpu/grid_subsampling/grid_subsampling_cpu.cpp',
                 'changenetwork/extensions/cpu/radius_neighbors/radius_neighbors.cpp',
