@@ -13,4 +13,4 @@ tensorboard
 tensorboardX
 laspy==2.3.0
 pandas==1.3.2
-"laspy[lazrs,laszip]"
+#"laspy[lazrs,laszip]"

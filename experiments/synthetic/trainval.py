@@ -2,7 +2,7 @@ import argparse
 import time
 
 import torch.optim as optim
-import torch
+import torch as nn
 
 from changenetwork.engine import EpochBasedTrainer
 
@@ -18,17 +18,17 @@ class Evaluator(nn.Module):
      max_index =  output_dict['output'].max()[1]
      result_dict = {}
 
-    if data_dict['label'][max_index] == 1:
+     if data_dict['label'][max_index] == 1:
       name = "corect_" + self.classes[max_index]
       result_dict[name] = 1
       result_dict["correct"] = 1
-    else:
+     else:
       name = "corect_" + self.classes[max_index]
       result_dict[name] = 0
       result_dict["correct"] = 0
     
-    result_dict[self.classes[max_index]] = 1
-    return result_dict
+     result_dict[self.classes[max_index]] = 1
+     return result_dict
 
 
 
