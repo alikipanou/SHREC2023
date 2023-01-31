@@ -35,7 +35,7 @@ class ChangeDataset(torch.utils.data.Dataset):
         #subset = 'train',
         point_limit=2048,
         shape = 'cylinder',
-        clearance = 1.5
+        clearance = 1
     ):
         super(ChangeDataset, self).__init__()
 
