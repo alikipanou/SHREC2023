@@ -10,7 +10,6 @@ import pandas as pd
 import re
 import open3d as o3d
 
-from changenetwork.utils.pointcloud import random_sample_rotation
 
 #####     library versions  ######
 
