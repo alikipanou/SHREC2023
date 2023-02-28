@@ -8,7 +8,6 @@ from collections import OrderedDict
  
 import torch
 import torch.nn as nn
-import torch.distributed as dist
 from torch.utils.tensorboard import SummaryWriter
 import ipdb
 
@@ -148,18 +147,18 @@ class BaseTrainer(abc.ABC):
         self.logger.info('Model has been loaded.')
 
         # Load other attributes
-        if 'epoch' in state_dict:
-            self.epoch = state_dict['epoch']
-            self.logger.info('Epoch has been loaded: {}.'.format(self.epoch))
-        if 'iteration' in state_dict:
-            self.iteration = state_dict['iteration']
-            self.logger.info('Iteration has been loaded: {}.'.format(self.iteration))
-        if 'optimizer' in state_dict and self.optimizer is not None:
-            self.optimizer.load_state_dict(state_dict['optimizer'])
-            self.logger.info('Optimizer has been loaded.')
-        if 'scheduler' in state_dict and self.scheduler is not None:
-            self.scheduler.load_state_dict(state_dict['scheduler'])
-            self.logger.info('Scheduler has been loaded.')
+        # if 'epoch' in state_dict:
+        #     self.epoch = state_dict['epoch']
+        #     self.logger.info('Epoch has been loaded: {}.'.format(self.epoch))
+        # if 'iteration' in state_dict:
+        #     self.iteration = state_dict['iteration']
+        #     self.logger.info('Iteration has been loaded: {}.'.format(self.iteration))
+        # if 'optimizer' in state_dict and self.optimizer is not None:
+        #     self.optimizer.load_state_dict(state_dict['optimizer'])
+        #     self.logger.info('Optimizer has been loaded.')
+        # if 'scheduler' in state_dict and self.scheduler is not None:
+        #     self.scheduler.load_state_dict(state_dict['scheduler'])
+        #     self.logger.info('Scheduler has been loaded.')
 
     def register_model(self, model):
         r"""Register model"""
