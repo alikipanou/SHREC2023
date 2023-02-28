@@ -24,10 +24,10 @@ class SyntheticDataset(torch.utils.data.Dataset):
 
     def __init__(
         self,
-        #subset = 'train',
-        point_limit=2048,
-        shape = 'cylinder',
-        clearance = 1
+        subset = 'train',
+        point_limit=4096,
+        shape = 'square',
+        clearance = 5.5
     ):
         super(SyntheticDataset, self).__init__()
 
@@ -35,23 +35,24 @@ class SyntheticDataset(torch.utils.data.Dataset):
         self.shape = shape
         self.clearance = clearance
 
-        #one hot encode labels (some labels are misspelled) 
-        self.class_dict = {'added' : np.array([1,0,0,0,0]), 'removed': np.array([0,1,0,0,0]), 'nochange' : np.array([0,0,1,0,0]),
-                        'change' : np.array([0,0,0,1,0]), 'color_change': np.array([0,0,0,0,1]), 'adeed': np.array([1,0,0,0,0]),
-                           'changee': np.array([0,0,0,1,0]), 'nohcange': np.array([0,0,1,0,0]), 'remoced' : np.array([0,1,0,0,0]),
-                           'reomved': np.array([0,1,0,0,0])}
+
+        #encode labels (some labels are misspelled) 
+        self.class_dict = {'added' : np.array([0]), 'removed': np.array([1]), 'nochange' : np.array([2]),
+                        'change' : np.array([3]), 'color_change': np.array([4]), 'adeed': np.array([0]),
+                           'changee': np.array([3]), 'nohcange': np.array([2]), 'remoced' : np.array([1]),
+                           'reomved': np.array([1])}
 
         # 'train' or 'val'
-        #self.subset = subset
+        self.subset = subset
 
         # get all paths from time_a, time_b and classifications in lists
-        self.files_time_a = glob.glob(osp.join('time_a', '*.las'))
+        self.files_time_a = glob.glob(osp.join('time_a',self.subset,'*.las'))
         self.files_time_a.sort(key=lambda x:[int(c) if c.isdigit() else c for c in re.split(r'(\d+)', x)])
 
-        self.files_time_b = glob.glob(osp.join('time_b', '*.las'))
+        self.files_time_b = glob.glob(osp.join('time_b', self.subset ,'*.las'))
         self.files_time_b.sort(key=lambda x:[int(c) if c.isdigit() else c for c in re.split(r'(\d+)', x)])
  
-        self.classification_files = glob.glob(osp.join('labeled_point_lists_train_syn', '*.csv'))
+        self.classification_files = glob.glob(osp.join('labeled_point_lists_train_syn', self.subset,'*.csv'))
         self.classification_files.sort(key=lambda x:[int(c) if c.isdigit() else c for c in re.split(r'(\d+)', x)])
 
 
@@ -87,10 +88,22 @@ class SyntheticDataset(torch.utils.data.Dataset):
         del self.labels_count['changee']
         del self.labels_count['nohcange']
         
-        num_classes = 5 
-        self.weights = [self.total_points_of_interest / (num_classes * label_count) for label_count in self.labels_count.values()]
+        self.weights_per_class = [self.total_points_of_interest / (label_count) for label_count in self.labels_count.values()]
+        
 
-       
+        self.weights = [0] * self.total_points_of_interest
+        index = 0
+        for i, path in enumerate(self.classification_files):
+            df = pd.read_csv(path)
+
+            for j in range(len(df)):
+                df_row = df.iloc[j]
+                label = df_row['classification']
+                self.weights[index] = self.weights_per_class[int(self.class_dict[label])]
+                index += 1
+        
+        
+        self.weights_per_class = np.asarray(self.weights_per_class).astype(np.float32)
         self.weights = np.asarray(self.weights).astype(np.float32)
         #print(self.weights)
  
@@ -126,9 +139,11 @@ class SyntheticDataset(torch.utils.data.Dataset):
     
     def _extract_area(self, full_cloud,center,clearance = 2.5,shape= 'cylinder'):
         if shape == 'square':
-            x_mask = ((center[0]+clearance)>full_cloud[:,0]) &   (full_cloud[:,0] >(center[0]-clearance))
-            y_mask = ((center[1]+clearance)>full_cloud[:,1]) &   (full_cloud[:,1] >(center[1]-clearance))
-            mask = x_mask & y_mask
+            x_mask = ((center[0]+clearance-4.3)>full_cloud[:,0]) &   (full_cloud[:,0] >(center[0]-clearance+4.3))
+            y_mask = ((center[1]+clearance-4.3)>full_cloud[:,1]) &   (full_cloud[:,1] >(center[1]-clearance+4.3))
+            z_mask = ((center[2]+clearance )>full_cloud[:,2]) &   (full_cloud[:,2] >(center[2]-clearance))
+            mask = x_mask & y_mask 
+            mask = mask & z_mask
         elif shape == 'cylinder':
             mask = np.linalg.norm(full_cloud[:,:2]-center,axis=1) <  clearance
 
@@ -142,15 +157,18 @@ class SyntheticDataset(torch.utils.data.Dataset):
         points = np.vstack((points_x, points_y, points_z, area[:,3], area[:,4], area[:,5])).T
         return points
 
-    def _random_subsample(self, points, point_limit = 2048):
-        if points.shape[0]==0:
+    def _random_subsample(self, points, point_limit = 4096):
+        dummy = False
+        if points.shape[0]<=20:
             print('No points found at this center replacing with dummy')
-            points = np.zeros((1,points.shape[1]))
+            dummy = True
+            points = np.random.randn(point_limit,points.shape[1])
         #No point sampling if already 
         if self.point_limit < points.shape[0]:
             random_indices = np.random.choice(points.shape[0],self.point_limit, replace=False)
             points = points[random_indices,:]
-        return points
+            
+        return points,dummy
     
     def _make_open3d_point_cloud(self, points, colors=None, normals=None):
         pcd = o3d.geometry.PointCloud()
@@ -161,15 +179,16 @@ class SyntheticDataset(torch.utils.data.Dataset):
             pcd.normals = o3d.utility.Vector3dVector(normals)
         return pcd
 
+
     def _visualize_object_pair(self, index):
         
         data_dict = self.__getitem__(index)
 
-        pcd1 = self._make_open3d_point_cloud(data_dict['ref_points'], data_dict['ref_feats'])
+        pcd1 = self._make_open3d_point_cloud(data_dict['ref_points'], data_dict['ref_feats'][:,:3])
 
         #translate 2nd object
         data_dict['src_points'][:,0] += 10
-        pcd2 = self._make_open3d_point_cloud(data_dict['src_points'], data_dict['src_feats'])
+        pcd2 = self._make_open3d_point_cloud(data_dict['src_points'], data_dict['src_feats'][:,:3])
 
         #visualize
         print("Scene id = " + data_dict['scene_id'])
@@ -197,10 +216,14 @@ class SyntheticDataset(torch.utils.data.Dataset):
             inner_index = index - self.lengths[file_index - 1]
             
         df_row = classification_df.iloc[inner_index]
-        center = np.array([df_row['z'],df_row['x']])
-        object_a = self._random_subsample(self._extract_area(points_a, center, clearance = self.clearance, shape = self.shape), point_limit = self.point_limit)
-        object_b = self._random_subsample(self._extract_area(points_b, center, clearance = self.clearance, shape = self.shape), point_limit = self.point_limit)
+        center = np.array([df_row['z'],df_row['x'], df_row['y']])
+        object_a, dummya = self._random_subsample(self._extract_area(points_a, center, clearance = self.clearance, shape = self.shape), point_limit = self.point_limit)
+        object_b, dummyb = self._random_subsample(self._extract_area(points_b, center, clearance = self.clearance, shape = self.shape), point_limit = self.point_limit)
         classification  = df_row['classification']
+        
+        dummy = False
+        if dummya or dummyb:
+            dummy = True
 
         
         object_a_points = object_a[:,:3]
@@ -209,14 +232,29 @@ class SyntheticDataset(torch.utils.data.Dataset):
         object_a_rgb = object_a[:,3:]
         object_b_rgb = object_b[:,3:]
 
+        ref_feats = np.ones((object_a_points.shape[0],4))
+        src_feats = np.ones((object_b_points.shape[0],4))
+
+        ref_feats[:,:3] = object_a_rgb
+        src_feats[:,:3] = object_b_rgb
+
+        
+
+        object_a_rgb = object_a[:,3:]
+        object_b_rgb = object_b[:,3:]
+
+        ref_feats[:,:3] = object_a_rgb
+        src_feats[:,:3] = object_b_rgb
+
         data_dict['scene_id'] = re.split(r'(\d+)', self.files_time_a[file_index])[1]
         data_dict['center'] = np.array([df_row['x'],df_row['y'], df_row['z']]).astype(np.float32)
         data_dict['ref_points'] = object_a_points.astype(np.float32)
         data_dict['src_points'] = object_b_points.astype(np.float32)
-        data_dict['ref_feats'] = object_a_rgb.astype(np.float32)
-        data_dict['src_feats'] = object_b_rgb.astype(np.float32)
+        data_dict['ref_feats'] = ref_feats.astype(np.float32)
+        data_dict['src_feats'] = src_feats.astype(np.float32)
         data_dict['class'] = classification
         data_dict['label'] = self.class_dict[classification].astype(np.float32)
+        data_dict['dummy'] = np.array(dummy,dtype =bool)
         
 
         return data_dict
@@ -224,8 +262,4 @@ class SyntheticDataset(torch.utils.data.Dataset):
     def __len__(self):
         return self.total_points_of_interest
 
-
-dataset = SyntheticDataset(shape = 'square')
-#print(len(dataset))
-dataset._visualize_object_pair(329)
 
