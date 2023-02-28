@@ -23,183 +23,187 @@ class EpochBasedTrainer(BaseTrainer):
     
     self.max_epoch = max_epoch
 
-    def before_train_step(self, epoch, iteration, data_dict) -> None:
-        pass
+  def before_train_step(self, epoch, iteration, data_dict) -> None:
+      pass
 
-    def before_val_step(self, epoch, iteration, data_dict) -> None:
-        pass
+  def before_val_step(self, epoch, iteration, data_dict) -> None:
+      pass
 
-    def after_train_step(self, epoch, iteration, data_dict, output_dict, result_dict) -> None:
-        pass
+  def after_train_step(self, epoch, iteration, data_dict, output_dict, result_dict) -> None:
+      pass
 
-    def after_val_step(self, epoch, iteration, data_dict, output_dict, result_dict) -> None:
-        pass
+  def after_val_step(self, epoch, iteration, data_dict, output_dict, result_dict) -> None:
+      pass
 
-    def before_train_epoch(self, epoch) -> None:
-        pass
+  def before_train_epoch(self, epoch) -> None:
+      pass
 
-    def before_val_epoch(self, epoch) -> None:
-        pass
+  def before_val_epoch(self, epoch) -> None:
+      pass
 
-    def after_train_epoch(self, epoch) -> None:
-        pass
+  def after_train_epoch(self, epoch) -> None:
+      pass
 
-    def after_val_epoch(self, epoch) -> None:
-        pass
+  def after_val_epoch(self, epoch) -> None:
+      pass
 
-    def train_step(self, epoch, iteration, data_dict) -> Tuple[Dict, Dict]:
-        pass
+  def train_step(self, epoch, iteration, data_dict) -> Tuple[Dict, Dict]:
+      pass
 
-    def val_step(self, epoch, iteration, data_dict) -> Tuple[Dict, Dict]:
-        pass
+  def val_step(self, epoch, iteration, data_dict) -> Tuple[Dict, Dict]:
+      pass
 
-    def after_backward(self, epoch, iteration, data_dict, output_dict, result_dict) -> None:
-        pass
+  def after_backward(self, epoch, iteration, data_dict, output_dict, result_dict) -> None:
+      pass
 
-    def check_gradients(self, epoch, iteration, data_dict, output_dict, result_dict):
-      if not self.run_grad_check:
-        return
+  def check_gradients(self, epoch, iteration, data_dict, output_dict, result_dict):
+    if not self.run_grad_check:
+      return
       
-      if not self.check_invalid_gradients():
-        self.logger.error('Epoch: {}, iter: {}, invalid gradients.'.format(epoch, iteration))
-        torch.save(data_dict, 'data.pth')
-        torch.save(self.model, 'model.pth')
-        self.logger.error('Data_dict and model snapshot saved.')
-        ipdb.set_trace()
+    if not self.check_invalid_gradients():
+      self.logger.error('Epoch: {}, iter: {}, invalid gradients.'.format(epoch, iteration))
+      torch.save(data_dict, 'data.pth')
+      torch.save(self.model, 'model.pth')
+      self.logger.error('Data_dict and model snapshot saved.')
+      ipdb.set_trace()
     
-    def train_epoch(self):
-      if self.distributed:
-        self.train_loader.sampler.set_epoch(self.epoch)
+  def train_epoch(self):
 
-      self.before_train_epoch(self.epoch)
-      self.optimizer.zero_grad()
-      total_iterations = len(self.train_loader)
+    self.optimizer.zero_grad()
+    total_iterations = len(self.train_loader)
+    for iteration, data_dict in enumerate(self.train_loader):
+      #print(iteration)
+      if data_dict['dummy'] :
+         continue
+      self.inner_iteration = iteration + 1
+      self.iteration += 1
+      data_dict = to_cuda(data_dict)
+      self.timer.add_prepare_time()
+      # forward
+      output_dict, result_dict = self.train_step(data_dict)
+  
+      # backward & optimization
+      result_dict['loss'].backward()
+      self.check_gradients(self.epoch, self.inner_iteration, data_dict, output_dict, result_dict)
+      self.optimizer_step(self.inner_iteration)
 
-      for iteration, data_dict in enumerate(self.train_loader):
-        self.inner_iteration = iteration + 1
-        self.iteration += 1
-        data_dict = to_cuda(data_dict)
-        self.before_train_step(self.epoch, self.inner_iteration, data_dict)
-        self.timer.add_prepare_time()
-        # forward
-        output_dict, result_dict = self.train_step(data_dict)
-   
-        # backward & optimization
-        result_dict['loss'].backward()
-        self.after_backward(self.epoch, self.inner_iteration, data_dict, output_dict, result_dict)
-        self.check_gradients(self.epoch, self.inner_iteration, data_dict, output_dict, result_dict)
-        self.optimer_step(self.inner_iteration)
+      # after training
+      self.timer.add_process_time()
+      self.after_train_step(self.epoch, self.inner_iteration, data_dict, output_dict, result_dict)
+      result_dict = self.release_tensors(result_dict)
+      self.summary_board.update_from_result_dict(result_dict)
 
-        # after training
-        self.timer.add_process_time()
-        self.after_train_step(self.epoch, self.inner_iteration, data_dict, output_dict, result_dict)
-        result_dict = self.release_tensors(result_dict)
-        self.summary_board.update_from_result_dict(result_dict)
-
-        # logging
-        if self.inner_iteration % self.log_steps == 0:
-          summary_dict = self.summary_board.summary()
-          message = get_log_string(
-                    result_dict=summary_dict,
-                    epoch=self.epoch,
-                    max_epoch=self.max_epoch,
-                    iteration=self.inner_iteration,
-                    max_iteration=total_iterations,
-                    lr=self.get_lr(),
-                    timer=self.timer,
-                )
-          self.logger.info(message)
-          self.write_event('train', summary_dict, self.iteration)
-        
-        torch.cuda.empty_cache()
-      
-      self.after_train_epoch(self.epoch)
-      message = get_log_string(self.summary_board.summary(), epoch=self.epoch, timer=self.timer)
-      self.logger.critical(message)
-
-      # scheduler
-      if self.scheduler is not None:
-        self.scheduler.step()
-      
-      # snapshot
-      self.save_snapshot(f'epoch-{self.epoch}.pth.tar')
-      if not self.save_all_snapshots:
-        last_snapshot = f'epoch-{self.epoch - 1}.pth.tar'
-        if osp.exists(last_snapshot):
-          os.remove(last_snapshot)
-
-    def inference_epoch(self):
-      self.set_eval_mode()
-      self.before_val_epoch(self.epoch)
-      timer = Timer()
-      summary_board = SummaryBoard(adaptive=True)
-      total_iterations = len(self.val_loader)
-      pbar = tqdm.tqdm(enumerate(self.val_loader), total = total_iterations)
-
-      for iteration, data_dict in pbar:
-        self.inner_iteration = iteration + 1
-        data_dict = to_cuda(data_dict)
-        self.before_val_step(self.epoch, self.inner_iteration, data_dict)
-        timer.add_prepare_time()
-
-        output_dict, result_dict = self.val_step(data_dict)
-
-        torch.cuda.synchronize()
-        timer.add_process_time()
-        self.after_val_step(self.epoch, self.inner_iteration, data_dict, output_dict, result_dict)
-        result_dict = self.release_tensors(result_dict)
-        summary_board.update_from_result_dict(result_dict)
+      # logging
+      if self.inner_iteration % self.log_steps == 0:
+        summary_dict = self.summary_board.summary()
         message = get_log_string(
-                result_dict=summary_board.summary(['correct']),
-                epoch=self.epoch,
-                iteration=self.inner_iteration,
-                max_iteration=total_iterations,
-                timer=timer,
-            )
-        pbar.set_description(message)
-        torch.cuda.empty_cache()
+                  result_dict=summary_dict,
+                  epoch=self.epoch,
+                  max_epoch=self.max_epoch,
+                  iteration=self.inner_iteration,
+                  max_iteration=total_iterations,
+                  lr=self.get_lr(),
+                  timer=self.timer,
+              )
+        self.logger.info(message)
+        self.write_event('train', summary_dict, self.iteration)
       
-      dict_accuracies = summary_board.summary(['correct', 'correct_added', 'correct_removed', 'correct_nochange', 'correct_change', 'correct_color_change'])
-      dict_gts = summary_board.summary_len(['correct_added', 'correct_removed', 'correct_nochange', 'correct_change', 'correct_color_change'])
-      dict_tps = summary_board.summary_sum(['correct_added', 'correct_removed', 'correct_nochange', 'correct_change', 'correct_color_change'])
-      
-      dict_preds = summary_board.summary_sum(['added', 'removed', 'nochange', 'change', 'color_change'])
-      
-      self.after_val_epoch(self.epoch)
-      summary_dict = {}
-      summary_dict['overall_accuracy'] = dict_accuracies['correct']
-      summary_dict['added_accuracy'] = dict_accuracies['correct_added']
-      summary_dict['removed_accuracy'] = dict_accuracies['correct_removed']
-      summary_dict['nochange_accuracy'] = dict_accuracies['correct_nochange']
-      summary_dict['change_accuracy'] = dict_accuracies['correct_change']
-      summary_dict['color_change_accuracy'] = dict_accuracies['correct_color_change']
-      
-      summary_dict['added_iou'] = dict_tps['correct_added'] / (dict_gts['correct_added'] + dict_preds['added'] - dict_tps['correct_added'])
-      summary_dict['removed_iou'] = dict_tps['correct_removed'] / (dict_gts['correct_removed'] + dict_preds['removed'] - dict_tps['correct_removed'])
-      summary_dict['nochange_iou'] = dict_tps['correct_nochange'] / (dict_gts['correct_nochange'] + dict_preds['nochange'] - dict_tps['correct_nochange'])
-      summary_dict['change_iou'] = dict_tps['correct_change'] / (dict_gts['correct_change'] + dict_preds['change'] - dict_tps['correct_change'])
-      summary_dict['color_change_iou'] = dict_tps['correct_color_change'] / (dict_gts['correct_color_change'] + dict_preds['color_change'] - dict_tps['correct_color_change'])
-      summary_dict['mean_iou'] = np.mean(summary_dict['added_iou'], summary_dict['removed_iou'], summary_dict['nochange_iou'], summary_dict['change_iou'], summary_dict['color_change_iou'])
-      
-      message = '[Val] ' + get_log_string(summary_dict, epoch=self.epoch, timer=timer)
-      self.logger.critical(message)
-      self.write_event('val', summary_dict, self.epoch)
-      self.set_train_mode()
+      torch.cuda.empty_cache()
+    
+    self.after_train_epoch(self.epoch)
+    message = get_log_string(self.summary_board.summary(), epoch=self.epoch, timer=self.timer)
+    self.logger.critical(message)
+
+    # scheduler
+    if self.scheduler is not None:
+      self.scheduler.step()
+    
+    # snapshot
+    self.save_snapshot(f'epoch-{self.epoch}.pth.tar')
+    if not self.save_all_snapshots:
+      last_snapshot = f'epoch-{self.epoch - 1}.pth.tar'
+      if osp.exists(last_snapshot):
+        os.remove(last_snapshot)
+
+  def inference_epoch(self):
+    self.set_eval_mode()
+    timer = Timer()
+    summary_board = SummaryBoard(adaptive=True)
+    total_iterations = len(self.val_loader)
+    pbar = tqdm.tqdm(enumerate(self.val_loader), total = total_iterations)
+
+    for iteration, data_dict in pbar:
+      self.inner_iteration = iteration + 1
+      data_dict = to_cuda(data_dict)
+      timer.add_prepare_time()
+
+      output_dict, result_dict = self.val_step(data_dict)
+
+      torch.cuda.synchronize()
+      timer.add_process_time()
+      self.after_val_step(self.epoch, self.inner_iteration, data_dict, output_dict, result_dict)
+      result_dict = self.release_tensors(result_dict)
+      summary_board.update_from_result_dict(result_dict)
+      message = get_log_string(
+              result_dict=summary_board.summary(['correct']),
+              epoch=self.epoch,
+              iteration=self.inner_iteration,
+              max_iteration=total_iterations,
+              timer=timer,
+          )
+      pbar.set_description(message)
+      torch.cuda.empty_cache()
+    
+    dict_accuracies = summary_board.summary(['correct', 'correct_added', 'correct_removed', 'correct_nochange', 'correct_change', 'correct_color_change'])
+    dict_gts = summary_board.summary_len(['correct_added', 'correct_removed', 'correct_nochange', 'correct_change', 'correct_color_change'])
+    
+
+    dict_tps = summary_board.summary_sum(['correct_added', 'correct_removed', 'correct_nochange', 'correct_change', 'correct_color_change'])
+    
+    dict_preds = {}
+    labels_exist = []
+    for label in ['added', 'removed', 'nochange', 'change', 'color_change']:
+      if label not in summary_board.meter_names:
+        dict_preds[label] = 0
+      else:
+        labels_exist.append(label)
+    dict_preds2 = summary_board.summary_sum(labels_exist)
+    dict_preds2.update(dict_preds)
+    
+    self.after_val_epoch(self.epoch)
+    summary_dict = {}
+    summary_dict['overall_accuracy'] = dict_accuracies['correct']
+    summary_dict['added_accuracy'] = dict_accuracies['correct_added']
+    summary_dict['removed_accuracy'] = dict_accuracies['correct_removed']
+    summary_dict['nochange_accuracy'] = dict_accuracies['correct_nochange']
+    summary_dict['change_accuracy'] = dict_accuracies['correct_change']
+    summary_dict['color_change_accuracy'] = dict_accuracies['correct_color_change']
+    
+    summary_dict['added_iou'] = dict_tps['correct_added'] / (dict_gts['correct_added'] + dict_preds2['added'] - dict_tps['correct_added'])
+    summary_dict['removed_iou'] = dict_tps['correct_removed'] / (dict_gts['correct_removed'] + dict_preds2['removed'] - dict_tps['correct_removed'])
+    summary_dict['nochange_iou'] = dict_tps['correct_nochange'] / (dict_gts['correct_nochange'] + dict_preds2['nochange'] - dict_tps['correct_nochange'])
+    summary_dict['change_iou'] = dict_tps['correct_change'] / (dict_gts['correct_change'] + dict_preds2['change'] - dict_tps['correct_change'])
+    summary_dict['color_change_iou'] = dict_tps['correct_color_change'] / (dict_gts['correct_color_change'] + dict_preds2['color_change'] - dict_tps['correct_color_change'])
+    summary_dict['mean_iou'] = (summary_dict['added_iou'] + summary_dict['removed_iou'] + summary_dict['nochange_iou'] + summary_dict['change_iou'] +  summary_dict['color_change_iou']) / 5
+    
+    message = '[Val] ' + get_log_string(summary_dict, epoch=self.epoch, timer=timer)
+    self.logger.critical(message)
+    self.write_event('val', summary_dict, self.epoch)
+    self.set_train_mode()
 
 
-    def run(self):
-      assert self.train_loader is not None
-      assert self.val_loader is not None
-      
+  def run(self):
+    assert self.train_loader is not None
+    assert self.val_loader is not None
+    
 
-      if self.args.resume:
-        self.load_snapshot(osp.join(self.snapshot_dir, 'snapshot.pth.tar'))
-      elif self.args.snapshot is not None:
-        self.load_snapshot(self.args.snapshot)
+    if self.args.resume:
+      self.load_snapshot(osp.join(self.snapshot_dir, 'snapshot.pth.tar'))
+    elif self.args.snapshot is not None:
+      self.load_snapshot(self.args.snapshot)
 
-      self.set_train_mode()
-
-      while self.epoch < self.max_epoch:
-        self.epoch += 1
-        self.train_epoch()
-        self.inference_epoch()
+    self.set_train_mode()
+    while self.epoch < self.max_epoch:
+      self.epoch += 1
+      self.train_epoch()
+      self.inference_epoch()
