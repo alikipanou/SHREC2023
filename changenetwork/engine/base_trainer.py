@@ -5,7 +5,7 @@ import time
 import json
 import abc
 from collections import OrderedDict
-
+ 
 import torch
 import torch.nn as nn
 import torch.distributed as dist
@@ -25,7 +25,6 @@ def inject_default_parser(parser=None):
     parser.add_argument('--snapshot', default=None, help='load from snapshot')
     parser.add_argument('--epoch', type=int, default=None, help='load epoch')
     parser.add_argument('--log_steps', type=int, default=10, help='logging steps')
-    parser.add_argument('--local_rank', type=int, default=-1, help='local rank for ddp')
     return parser
 
 
@@ -34,7 +33,7 @@ class BaseTrainer(abc.ABC):
         self,
         cfg,
         parser=None,
-        cudnn_deterministic=False,
+        cudnn_deterministic=True,
         autograd_anomaly_detection=False,
         save_all_snapshots=True,
         run_grad_check=False,
@@ -46,7 +45,7 @@ class BaseTrainer(abc.ABC):
 
         # logger
         log_file = osp.join(cfg.log_dir, 'train-{}.log'.format(time.strftime('%Y%m%d-%H%M%S')))
-        self.logger = Logger(log_file=log_file, local_rank=self.args.local_rank)
+        self.logger = Logger(log_file=log_file)
 
         # command executed
         message = 'Command executed: ' + ' '.join(sys.argv)
@@ -60,25 +59,19 @@ class BaseTrainer(abc.ABC):
         self.writer = SummaryWriter(log_dir=cfg.event_dir)
         self.logger.info(f'Tensorboard is enabled. Write events to {cfg.event_dir}.')
 
-        # cuda and distributed
+        # cuda
         if not torch.cuda.is_available():
             raise RuntimeError('No CUDA devices available.')
-        self.distributed = self.args.local_rank != -1
-        if self.distributed:
-            torch.cuda.set_device(self.args.local_rank)
-            dist.init_process_group(backend='nccl')
-            self.world_size = dist.get_world_size()
-            self.local_rank = self.args.local_rank
-            self.logger.info(f'Using DistributedDataParallel mode (world_size: {self.world_size})')
-        else:
-            if torch.cuda.device_count() > 1:
-                self.logger.warning('DataParallel is deprecated. Use DistributedDataParallel instead.')
-            self.world_size = 1
-            self.local_rank = 0
-            self.logger.info('Using Single-GPU mode.')
+       
+        
+        if torch.cuda.device_count() > 1:
+            self.logger.warning('DataParallel is deprecated. Use DistributedDataParallel instead.')
+        self.world_size = 1
+        self.local_rank = 0
+        self.logger.info('Using Single-GPU mode.')
         self.cudnn_deterministic = cudnn_deterministic
         self.autograd_anomaly_detection = autograd_anomaly_detection
-        self.seed = cfg.seed + self.local_rank
+        self.seed = cfg.seed + self.local_rank 
         initialize(
             seed=self.seed,
             cudnn_deterministic=self.cudnn_deterministic,
@@ -114,10 +107,7 @@ class BaseTrainer(abc.ABC):
             return
 
         model_state_dict = self.model.state_dict()
-        # Remove '.module' prefix in DistributedDataParallel mode.
-        if self.distributed:
-            model_state_dict = OrderedDict([(key[7:], value) for key, value in model_state_dict.items()])
-
+    
         # save model
         filename = osp.join(self.snapshot_dir, filename)
         state_dict = {
@@ -142,8 +132,7 @@ class BaseTrainer(abc.ABC):
 
         # Load model
         model_dict = state_dict['model']
-        if fix_prefix and self.distributed:
-            model_dict = OrderedDict([('module.' + key, value) for key, value in model_dict.items()])
+
         self.model.load_state_dict(model_dict, strict=False)
 
         # log missing keys and unexpected keys
@@ -151,9 +140,7 @@ class BaseTrainer(abc.ABC):
         model_keys = set(self.model.state_dict().keys())
         missing_keys = model_keys - snapshot_keys
         unexpected_keys = snapshot_keys - model_keys
-        if self.distributed:
-            missing_keys = set([missing_key[7:] for missing_key in missing_keys])
-            unexpected_keys = set([unexpected_key[7:] for unexpected_key in unexpected_keys])
+        
         if len(missing_keys) > 0:
             message = f'Missing keys: {missing_keys}'
             self.logger.warning(message)
@@ -177,20 +164,13 @@ class BaseTrainer(abc.ABC):
             self.logger.info('Scheduler has been loaded.')
 
     def register_model(self, model):
-        r"""Register model. DDP is automatically used."""
-        if self.distributed:
-            local_rank = self.local_rank
-            model = nn.parallel.DistributedDataParallel(model, device_ids=[local_rank], output_device=local_rank)
+        r"""Register model"""
         self.model = model
         message = 'Model description:\n' + str(model)
         self.logger.info(message)
         return model
 
     def register_optimizer(self, optimizer):
-        r"""Register optimizer. DDP is automatically used."""
-        if self.distributed:
-            for param_group in optimizer.param_groups:
-                param_group['lr'] = param_group['lr'] * self.world_size
         self.optimizer = optimizer
 
     def register_scheduler(self, scheduler):
@@ -228,8 +208,6 @@ class BaseTrainer(abc.ABC):
 
     def release_tensors(self, result_dict):
         r"""All reduce and release tensors."""
-        if self.distributed:
-            result_dict = all_reduce_tensors(result_dict, world_size=self.world_size)
         result_dict = release_cuda(result_dict)
         return result_dict
 
@@ -253,3 +231,4 @@ class BaseTrainer(abc.ABC):
     @abc.abstractmethod
     def run(self):
         raise NotImplemented
+
