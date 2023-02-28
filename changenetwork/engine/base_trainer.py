@@ -62,10 +62,8 @@ class BaseTrainer(abc.ABC):
         # cuda
         if not torch.cuda.is_available():
             raise RuntimeError('No CUDA devices available.')
-       
         
-        if torch.cuda.device_count() > 1:
-            self.logger.warning('DataParallel is deprecated. Use DistributedDataParallel instead.')
+       
         self.world_size = 1
         self.local_rank = 0
         self.logger.info('Using Single-GPU mode.')
@@ -231,4 +229,3 @@ class BaseTrainer(abc.ABC):
     @abc.abstractmethod
     def run(self):
         raise NotImplemented
-
