@@ -19,6 +19,7 @@ _C.output_dir = osp.join(_C.root_dir, 'output', _C.exp_name)
 _C.snapshot_dir = osp.join(_C.output_dir, 'snapshots')
 _C.log_dir = osp.join(_C.output_dir, 'logs')
 _C.event_dir = osp.join(_C.output_dir, 'events')
+_C.feature_dir = osp.join(_C.output_dir, 'features')
 
 ensure_dir(_C.output_dir)
 ensure_dir(_C.snapshot_dir)
@@ -28,14 +29,14 @@ ensure_dir(_C.event_dir)
 # train data
 _C.train = edict()
 _C.train.batch_size = 1
-_C.train.num_workers = 8
+
 
 
 # optim config
 _C.optim = edict()
 _C.optim.lr = 1e-2
 _C.optim.lr_decay = 0.95
-_C.optim.lr_decay_steps = 1
+_C.optim.lr_decay_steps = 4
 _C.optim.weight_decay = 1e-6
 _C.optim.max_epoch = 250
 _C.optim.grad_acc_steps = 1
@@ -46,12 +47,12 @@ _C.backbone = edict()
 _C.backbone.num_stages = 4
 _C.backbone.init_voxel_size = 0.02
 _C.backbone.kernel_size = 15
-_C.backbone.base_radius = 4.25
+_C.backbone.base_radius = 2.5
 _C.backbone.base_sigma = 2.0
 _C.backbone.init_radius = _C.backbone.base_radius * _C.backbone.init_voxel_size
 _C.backbone.init_sigma = _C.backbone.base_sigma * _C.backbone.init_voxel_size
 _C.backbone.group_norm = 32
-_C.backbone.input_dim = 3
+_C.backbone.input_dim = 4
 _C.backbone.init_dim = 64
 _C.backbone.output_dim = 1024
 
