@@ -1,6 +1,8 @@
 import torch
 import torch.nn as nn
-from changenetwork.modules.kpconv import (ConvBlock, ResidualBlock, UnaryBlock, LastUnaryBlock, nearest_upsample)
+from changenetwork.modules.kpconv.modules import (ConvBlock, ResidualBlock, UnaryBlock)
+from changenetwork.modules.kpconv.functional import nearest_upsample
+
 
 class KPConvFPN(nn.Module):
   def __init__(self, input_dim, output_dim, init_dim, kernel_size, init_radius, init_sigma, group_norm):
@@ -32,6 +34,7 @@ class KPConvFPN(nn.Module):
 
     feats_s1 = feats
     feats_s1 = self.encoder1_1(feats_s1, points_list[0], points_list[0], neighbors_list[0])
+    #print(feats_s1.shape)
     feats_s1 = self.encoder1_2(feats_s1, points_list[0], points_list[0], neighbors_list[0])
 
     feats_s2 = self.encoder2_1(feats_s1, points_list[1], points_list[0], subsampling_list[0])
