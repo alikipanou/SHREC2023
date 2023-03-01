@@ -3,7 +3,8 @@ from functools import partial
 import numpy as np
 import torch
 
-from changenetwork.modules.ops import grid_subsample, radius_search
+from changenetwork.modules.ops.grid_subsample import grid_subsample
+from changenetwork.modules.ops.radius_search import radius_search
 from changenetwork.utils.torch import build_dataloader
 
 
@@ -222,9 +223,8 @@ def build_dataloader_stack_mode(
     num_workers=1,
     shuffle=False,
     drop_last=False,
-    distributed=False,
-    precompute_data=True,
-):
+    precompute_data=True):
+
     dataloader = build_dataloader(
         dataset,
         batch_size=batch_size,
@@ -239,6 +239,5 @@ def build_dataloader_stack_mode(
             precompute_data=precompute_data,
         ),
         drop_last=drop_last,
-        distributed=distributed,
     )
     return dataloader
