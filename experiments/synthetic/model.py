@@ -21,8 +21,8 @@ class ChangeNetwork(nn.Module):
                                cfg.backbone.group_norm)
     
     self.global_max_pooling = ELT.Reduce("N d -> d", "max")
-    self.sequential = nn.Sequential(nn.Linear(cfg.backbone.output_dim, 512), nn.BatchNorm1d(512), nn.ReLU(),
-                                    nn.Linear(512, 256), nn.BatchNorm1d(256), nn.ReLU(),
+    self.sequential = nn.Sequential(nn.Linear(cfg.backbone.output_dim, 512),nn.Dropout(), nn.ReLU(),
+                                    nn.Linear(512, 256), nn.Dropout(),nn.ReLU(),
                                     nn.Linear(256, 5))
   
     
@@ -41,9 +41,11 @@ class ChangeNetwork(nn.Module):
     ref_feats = self.global_max_pooling(ref_feats)
     src_feats = self.global_max_pooling(src_feats)
 
-    diff = ref_feats - src_feats
+    diff = (ref_feats - src_feats)
     
     out = self.sequential(diff)
+
+    out = torch.flatten(out)
 
     output_dict['output'] = out
 
