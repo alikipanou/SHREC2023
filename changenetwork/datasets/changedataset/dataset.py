@@ -21,7 +21,6 @@ import open3d as o3d
 # laz backends required, install with: pip3 install "laspy[lazrs,laszip]"
 
 
-# Change Dataset consists of 587 object pairs
 
 class ChangeDataset(torch.utils.data.Dataset):
 
