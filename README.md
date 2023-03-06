@@ -20,10 +20,11 @@ python setup.py build develop
 ## Testing
 
 ```
-#Set the Python path to include the parent folder by running
+#Set the Python path to include the parent folder by running the following command.
 export PYTHONPATH=..:$PYTHONPATH
 
-
+#for Change3D dataset run the command
+python experiments/changedataset/test.py --snapshot best_changedataset.pth.tar
 ```
 
 ## Credits
