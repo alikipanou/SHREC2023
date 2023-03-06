@@ -17,6 +17,14 @@ python setup.py build develop
 
 ```
 
+## Testing
+
+```
+#Set the Python path to include the parent folder by running
+export PYTHONPATH=..:$PYTHONPATH
+
+
+```
 
 ## Credits
 
