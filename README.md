@@ -1,6 +1,6 @@
 # SHREC2023
 
-Installation
+## Installation
 
 ```
 # It is recommended to create a new environment
