@@ -13,7 +13,9 @@ pip install torch==1.7.1+cu110 -f https://download.pytorch.org/whl/torch_stable.
 # Install packages and other dependencies
 pip install -r requirements.txt
 pip install "laspy[lazrs,laszip]"
-python setup.py build develop ```
+python setup.py build develop 
+
+```
 
 
 ## Credits
