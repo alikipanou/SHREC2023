@@ -62,6 +62,11 @@ export PYTHONPATH=..:$PYTHONPATH
 #Change3D
 #Run the command:
 python experiments/changedataset/test.py --snapshot best_changedataset.pth.tar
+
+#Synthetic
+#Run the command:
+python experiments/synthetic/test.py --snapshot best_synthetic.pth.tar
+
 ```
 
 ## Credits
