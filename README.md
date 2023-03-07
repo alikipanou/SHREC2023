@@ -17,7 +17,7 @@ python setup.py build develop
 
 ```
 
-## Data Preperation
+## Data Preparation
 
 ## Change3D
 The data should be organized as follows:
