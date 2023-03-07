@@ -11,6 +11,14 @@ def create_logger(log_file=None):
 
     format_str = '[%(asctime)s] [%(levelname).4s] %(message)s'
 
+    coloredlogs.DEFAULT_LEVEL_STYLES = {
+        "critical": {"color": "yellow"},
+        "debug": {"color": "blue"},
+        "error": {"color": "red"},
+        "info": {"color": "white"},
+        "warning": {"color": "cyan"}
+    }
+
     stream_handler = logging.StreamHandler()
     colored_formatter = coloredlogs.ColoredFormatter(format_str)
     stream_handler.setFormatter(colored_formatter)
