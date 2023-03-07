@@ -38,13 +38,13 @@ The data should be organized as follows:
  ## Synthetic
 The data should be organized as follows:
 --time_a
-     |--test
-     |--train
-     |--val
+       |--test
+       |--train
+       |--val
 --time_b
-     |--test
-     |--train
-     |--val
+       |--test
+       |--train
+       |--val
 --labeled_point_lists_syn
                         |--test
                         |--train
