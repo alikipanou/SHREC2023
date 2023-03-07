@@ -21,6 +21,7 @@ python setup.py build develop
 
 ## Change3D
 The data should be organized as follows:
+```
 --2016
      |--test
      |--train
@@ -34,9 +35,10 @@ The data should be organized as follows:
                                |--test
                                |--train
                                |--val
-                    
+```                    
  ## Synthetic
 The data should be organized as follows:
+```
 --time_a
        |--test
        |--train
@@ -49,7 +51,7 @@ The data should be organized as follows:
                         |--test
                         |--train
                         |--val
-
+```
 
 ## Testing
 
