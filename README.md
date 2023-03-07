@@ -17,13 +17,47 @@ python setup.py build develop
 
 ```
 
+## Data Preperation
+
+## Change3D
+The data should be organized as follows:
+--2016
+     |--test
+     |--train
+     |--val
+--2020
+     |--test
+     |--train
+     |--val
+--labeled_point_lists
+                    |--2016-2020
+                               |--test
+                               |--train
+                               |--val
+                    
+ ## Synthetic
+The data should be organized as follows:
+--time_a
+     |--test
+     |--train
+     |--val
+--time_b
+     |--test
+     |--train
+     |--val
+--labeled_point_lists_syn
+                        |--test
+                        |--train
+                        |--val
+
+
 ## Testing
 
 ```
-#Set the Python path to include the parent folder by running the following command.
+#Set the Python path to include the parent folder by running the following command:
 export PYTHONPATH=..:$PYTHONPATH
 
-#for Change3D dataset run the command
+#for Change3D dataset run the command:
 python experiments/changedataset/test.py --snapshot best_changedataset.pth.tar
 ```
 
