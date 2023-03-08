@@ -59,6 +59,8 @@ The data should be organized as follows:
 #Set the Python path to include the parent folder by running the following command:
 export PYTHONPATH=..:$PYTHONPATH
 
+The test data needs to be placed in the 'test' folder of each dataset.
+
 #Change3D
 #Run the command:
 python experiments/changedataset/test.py --snapshot best_changedataset.pth.tar
