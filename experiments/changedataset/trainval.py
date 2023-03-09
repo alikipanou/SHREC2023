@@ -21,7 +21,7 @@ class Evaluator(torch.nn.Module):
     self.class_counts = {'added':0 , 'removed':0, 'nochange':0, 'change':0 , 'color_change':0}
   
   def forward(self, data_dict, output_dict):
-     output_dict['output'] = F.softmax(output_dict['output'])
+     output_dict['output'] = F.softmax(output_dict['output'], dim = -1)
      max_index =  torch.max(output_dict['output'],dim = -1)[1]
      result_dict = {}
      print(max_index)
