@@ -8,7 +8,7 @@ from changenetwork.utils.data import (
 
 
 def train_valid_data_loader(cfg):
-  train_dataset = ChangeDataset(subset = 'train')
+  train_dataset = ChangeDataset(subset = 'train', point_limit=2048)
                     
   #neighbor_limits = calibrate_neighbors_stack_mode(train_dataset, registration_collate_fn_stack_mode, 
                                                    #cfg.backbone.num_stages, cfg.backbone.init_voxel_size, cfg.backbone.init_radius)
@@ -19,7 +19,7 @@ def train_valid_data_loader(cfg):
                                              cfg.backbone.init_voxel_size, cfg.backbone.init_radius, neighbor_limits,
                                              batch_size=1, num_workers=1, shuffle=True)
   
-  valid_dataset = ChangeDataset(subset = 'val')
+  valid_dataset = ChangeDataset(subset = 'val', point_limit=2048)
 
   valid_loader = build_dataloader_stack_mode(valid_dataset, registration_collate_fn_stack_mode, cfg.backbone.num_stages,
                                              cfg.backbone.init_voxel_size, cfg.backbone.init_radius, neighbor_limits,
@@ -29,18 +29,21 @@ def train_valid_data_loader(cfg):
 
 
 def test_data_loader(cfg):
-    train_dataset = ChangeDataset(subset='train')
+    train_dataset = ChangeDataset(subset='train', point_limit=2048)
     
     #neighbor_limits = calibrate_neighbors_stack_mode(train_dataset, registration_collate_fn_stack_mode, 
                                                    #cfg.backbone.num_stages, cfg.backbone.init_voxel_size, cfg.backbone.init_radius)
+    #print(neighbor_limits)
     neighbor_limits = [ 7 ,13, 20, 23]
-    test_dataset = ChangeDataset(subset='test')
+    test_dataset = ChangeDataset(subset='val', point_limit=2048)
     
     test_loader = build_dataloader_stack_mode(test_dataset, registration_collate_fn_stack_mode, cfg.backbone.num_stages,
                                              cfg.backbone.init_voxel_size, cfg.backbone.init_radius, neighbor_limits,
                                              batch_size=1, num_workers=1, shuffle=False)
 
     return test_loader, neighbor_limits
+
+
 
 
 
