@@ -5,6 +5,8 @@ import os.path as osp
 import torch.optim as optim
 import torch as nn
 import torch
+import torch.nn.functional as F
+
 
 from changenetwork.engine.epoch_based_trainer import EpochBasedTrainer
 
@@ -43,6 +45,7 @@ class Evaluator(torch.nn.Module):
     self.class_counts = {'added':0 , 'removed':0, 'nochange':0, 'change':0 , 'color_change':0}
   
   def forward(self, data_dict, output_dict):
+     output_dict['output'] = F.softmax(output_dict['output'], dim = -1)
      max_index =  torch.max(output_dict['output'],dim = -1)[1]
      result_dict = {}
      if data_dict['label'] == max_index:
@@ -129,3 +132,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
