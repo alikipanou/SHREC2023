@@ -25,7 +25,7 @@ class SyntheticDataset(torch.utils.data.Dataset):
     def __init__(
         self,
         subset = 'train',
-        point_limit=4096,
+        point_limit=2048,
         shape = 'square',
         clearance = 5.5
     ):
@@ -42,7 +42,7 @@ class SyntheticDataset(torch.utils.data.Dataset):
                            'changee': np.array([3]), 'nohcange': np.array([2]), 'remoced' : np.array([1]),
                            'reomved': np.array([1])}
 
-        # 'train' or 'val'
+        # 'train' or 'val' or 'test'
         self.subset = subset
 
         # get all paths from time_a, time_b and classifications in lists
@@ -52,7 +52,7 @@ class SyntheticDataset(torch.utils.data.Dataset):
         self.files_time_b = glob.glob(osp.join('time_b', self.subset ,'*.las'))
         self.files_time_b.sort(key=lambda x:[int(c) if c.isdigit() else c for c in re.split(r'(\d+)', x)])
  
-        self.classification_files = glob.glob(osp.join('labeled_point_lists_train_syn', self.subset,'*.csv'))
+        self.classification_files = glob.glob(osp.join('labeled_point_lists_syn', self.subset,'*.csv'))
         self.classification_files.sort(key=lambda x:[int(c) if c.isdigit() else c for c in re.split(r'(\d+)', x)])
 
 
@@ -75,7 +75,7 @@ class SyntheticDataset(torch.utils.data.Dataset):
                 df_row = df.iloc[j]
                 self.labels_count[df_row['classification']] += 1
 
-        # dataset is highly unbalanced
+        # dataset is highly imbalanced
         # create weights for each class
         self.labels_count['added'] += self.labels_count['adeed']
         self.labels_count['removed'] += (self.labels_count['remoced'] + self.labels_count['reomved'])
@@ -159,7 +159,7 @@ class SyntheticDataset(torch.utils.data.Dataset):
 
     def _random_subsample(self, points, point_limit = 4096):
         dummy = False
-        if points.shape[0]<=20:
+        if points.shape[0]<=50:
             print('No points found at this center replacing with dummy')
             dummy = True
             points = np.random.randn(point_limit,points.shape[1])
@@ -261,5 +261,3 @@ class SyntheticDataset(torch.utils.data.Dataset):
 
     def __len__(self):
         return self.total_points_of_interest
-
-
