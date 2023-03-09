@@ -150,9 +150,6 @@ class ChangeDataset(torch.utils.data.Dataset):
         return points
 
     def _random_subsample(self, points, point_limit = 4096):
-
-        #if (self.subset == 'val' or self.subset == 'test'):
-            #np.random.seed(7351)
         
         dummy = False
         if points.shape[0]<=50:
@@ -369,6 +366,10 @@ class ChangeDataset(torch.utils.data.Dataset):
 
     def __len__(self):
         return self.total_points_of_interest
+
+
+
+
 
 
 
