@@ -35,7 +35,7 @@ def test_data_loader(cfg):
                                                    #cfg.backbone.num_stages, cfg.backbone.init_voxel_size, cfg.backbone.init_radius)
     #print(neighbor_limits)
     neighbor_limits = [ 7 ,13, 20, 23]
-    test_dataset = ChangeDataset(subset='val', point_limit=2048)
+    test_dataset = ChangeDataset(subset='test', point_limit=2048)
     
     test_loader = build_dataloader_stack_mode(test_dataset, registration_collate_fn_stack_mode, cfg.backbone.num_stages,
                                              cfg.backbone.init_voxel_size, cfg.backbone.init_radius, neighbor_limits,
