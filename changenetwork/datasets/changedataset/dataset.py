@@ -21,6 +21,7 @@ import open3d as o3d
 # laz backends required, install with: pip3 install "laspy[lazrs,laszip]"
 
 
+# Change Dataset consists of 587 object pairs
 
 class ChangeDataset(torch.utils.data.Dataset):
 
@@ -43,13 +44,12 @@ class ChangeDataset(torch.utils.data.Dataset):
         self.remove_ground = remove_ground
         self.remove_statistical_noise = remove_statistical_noise
 
-        #encode labels (some labels are misspelled) 
         self.class_dict = {'added' : np.array([0]), 'removed': np.array([1]), 'nochange' : np.array([2]),
                         'change' : np.array([3]), 'color_change': np.array([4]) }
-        # 'train' or 'val'
+        # 'train' or 'val' or 'test'
         self.subset = subset
 
-        # get all paths from time_a, time_b and classifications in lists
+        # get all paths from the 2 years and classifications in lists
         self.files_time_a = glob.glob(osp.join('2016', self.subset,'*.laz'))
         self.files_time_a.sort(key=lambda x:[int(c) if c.isdigit() else c for c in re.split(r'(\d+)', x)])
 
@@ -58,7 +58,7 @@ class ChangeDataset(torch.utils.data.Dataset):
         self.files_time_b.sort(key=lambda x:[int(c) if c.isdigit() else c for c in re.split(r'(\d+)', x)])
 
  
-        self.classification_files = glob.glob(osp.join('labeled_point_lists_train','2016-2020', self.subset,'*.csv'))
+        self.classification_files = glob.glob(osp.join('labeled_point_lists','2016-2020', self.subset,'*.csv'))
         self.classification_files.sort(key=lambda x:[int(c) if c.isdigit() else c for c in re.split(r'(\d+)', x)])
 
         self.lengths = []
@@ -150,6 +150,10 @@ class ChangeDataset(torch.utils.data.Dataset):
         return points
 
     def _random_subsample(self, points, point_limit = 4096):
+
+        #if (self.subset == 'val' or self.subset == 'test'):
+            #np.random.seed(7351)
+        
         dummy = False
         if points.shape[0]<=50:
             print('No points found at this center replacing with dummy')
@@ -161,6 +165,54 @@ class ChangeDataset(torch.utils.data.Dataset):
             points = points[random_indices,:]
             
         return points,dummy
+    
+    def _farthest_point_sampling(self, points, point_limit = 4096):
+        """
+        Perform farthest point sampling to select k points from a point cloud.
+
+        Args:
+        - points: numpy array of shape (N, D), representing N points in D-dimensional space
+        - k: number of points to select
+
+        Returns:
+        - selected_points: numpy array of shape (k, D), representing the k selected points
+        """
+        if points.shape[0]<=50:
+            print('No points found at this center replacing with dummy')
+            dummy = True
+            np.random.seed(539)
+            points = np.random.randn(point_limit,points.shape[1])
+            return points, dummy
+    
+        if self.point_limit < points.shape[0]:
+            
+
+            # Initialize list of selected indices and selected points
+            selected_indices = []
+            selected_points = []
+
+            # Choose a random starting point
+            np.random.seed(539)
+            random_index = np.random.randint(points.shape[0])
+            selected_indices.append(random_index)
+            selected_points.append(points[random_index])
+
+            # Loop over remaining points to select
+            while len(selected_indices) < point_limit:
+               
+                
+                # Compute distance to each selected point
+                distances = np.sqrt(np.sum((points - np.array(selected_points)[:, np.newaxis])**2, axis=-1))
+                
+                # Choose point farthest from any selected point
+                farthest_index = np.argmax(np.min(distances, axis=0))
+                selected_indices.append(farthest_index)
+                selected_points.append(points[farthest_index])
+            
+    
+            return np.array(selected_points), False
+        else:
+            return points, False
 
     def _scale_points(self, points1, points2):
        points1 = points1 -np.mean(points1, axis = 0)
@@ -295,9 +347,6 @@ class ChangeDataset(torch.utils.data.Dataset):
             object_a_points, object_a_rgb =  self._remove_statistical_noise(object_a_points,object_a_rgb)
             object_b_points, object_b_rgb =  self._remove_statistical_noise(object_b_points,object_b_rgb)
         
-        #object_a_rgb = self._dbscan(object_a_points, object_a_rgb)
-        #object_b_rgb = self._dbscan(object_b_points, object_b_rgb)
-
        
         ref_feats = np.ones((object_a_points.shape[0],4))
         src_feats = np.ones((object_b_points.shape[0],4))
