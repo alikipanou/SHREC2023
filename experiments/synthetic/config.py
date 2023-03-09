@@ -38,7 +38,7 @@ _C.optim.lr = 1e-2
 _C.optim.lr_decay = 0.95
 _C.optim.lr_decay_steps = 4
 _C.optim.weight_decay = 1e-6
-_C.optim.max_epoch = 250
+_C.optim.max_epoch = 350
 _C.optim.grad_acc_steps = 1
 
 
