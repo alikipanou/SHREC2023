@@ -53,15 +53,15 @@ def build_dataloader(
     collate_fn=None,
     pin_memory=False,
     drop_last=False,
-    distributed=False,
-):
-    if distributed:
-        sampler = torch.utils.data.DistributedSampler(dataset)
-        shuffle = False
-    else:
-        sampler = None
-        shuffle = shuffle
+    ):
 
+    if dataset.subset == 'val' or dataset.subset == 'test':
+        sampler = None
+    else:
+        sampler  = torch.utils.data.sampler.WeightedRandomSampler(torch.from_numpy(dataset.weights).long(), len(dataset.weights))
+        
+    shuffle = False
+ 
     data_loader = torch.utils.data.DataLoader(
         dataset,
         batch_size=batch_size,
@@ -73,7 +73,6 @@ def build_dataloader(
         pin_memory=pin_memory,
         drop_last=drop_last,
     )
-
     return data_loader
 
 
