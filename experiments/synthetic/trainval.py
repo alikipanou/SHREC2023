@@ -47,12 +47,12 @@ class Evaluator(torch.nn.Module):
      result_dict = {}
      if data_dict['label'] == max_index:
       name = "correct_" + self.classes[int(max_index.item())]
-      print(name)
+      print(name[8:])
       result_dict[name] = 1
       result_dict["correct"] = 1
      else:
       name = "correct_" + self.classes[int(data_dict['label'].item())]
-      print(name)
+      print(name[8:])
       result_dict[name] = 0
       result_dict["correct"] = 0
     
