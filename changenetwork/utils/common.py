@@ -25,12 +25,12 @@ def get_print_format(value):
     if isinstance(value, str):
         return 's'
     if value == 0:
-        return '.3f'
+        return '.4f'
     if value < 1e-6:
-        return '.3e'
+        return '.4e'
     if value < 1e-3:
         return '.6f'
-    return '.3f'
+    return '.4f'
 
 
 def get_format_strings(kv_pairs):
@@ -69,3 +69,4 @@ def get_log_string(result_dict, epoch=None, max_epoch=None, iteration=None, max_
         log_strings.append(timer.tostring())
     message = ', '.join(log_strings)
     return message
+
