@@ -24,7 +24,7 @@ class Evaluator(torch.nn.Module):
      output_dict['output'] = F.softmax(output_dict['output'], dim = -1)
      max_index =  torch.max(output_dict['output'],dim = -1)[1]
      result_dict = {}
-     print(max_index)
+     #print(max_index)
      if data_dict['label'] == max_index:
       name = "correct_" + self.classes[int(max_index.item())]
       print(name[8:])
